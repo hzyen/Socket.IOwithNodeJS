@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/socket.io.js"></script>
+
+</head>
+
+<body>
+    <input type="file" id="input" />
+    <canvas width="400" height="300" id="canvas" />
+</body>
+
+<script type="text/javascript">
+    var socket = io('ws://10.101.0.181:8001', { transports: ['websocket', 'polling', 'flashsocket'] });
+    var URL;
+    var max_width;
+    var max_height;
+    var ctx;
+    var url;
+    var img;
+    var buffer;
+    var sendCount = 0;
+
+    function _base64ToArrayBuffer(base64) {
+        var binary_string = window.atob(base64);
+        var len = binary_string.length;
+        var bytes = new Uint8Array(len);
+        for (var i = 0; i < len; i++) {
+            bytes[i] = binary_string.charCodeAt(i);
+        }
+        return bytes.buffer;
+    }
+
+    function handleFiles(e) {
+        //For Display
+        ctx = document.getElementById('canvas').getContext('2d');
+        URL = window.webkitURL || window.URL;
+        max_width = 400;
+        max_height = 300;
+        url = URL.createObjectURL(e.target.files[0]);
+        img = new Image();
+        img.onload = function () {
+            var ratio = 1;
+            if (img.width > max_width) {
+                ratio = max_width / img.width;
+            }
+            if (ratio * img.height > max_height) {
+                ratio = max_height / img.height;
+            }
+            ctx.scale(ratio, ratio);
+            ctx.drawImage(img, 0, 0);
+        };
+        img.src = url;
+
+        //get data
+        var data = e.target.files[0];
+        sendImage(data);
+    }
+
+    function sendImage(data) {
+        var reader = new FileReader();
+        reader.onload = function (evt) {
+            var file = evt.target.result;
+            var base64Img = file.replace(/^data:image\/jpeg;base64,/, "")
+            buffer = _base64ToArrayBuffer(base64Img);
+            //console.log(file);
+            //console.log(base64Img);
+            //console.log('File Size: ' + buffer.byteLength);
+            //socket.emit('imgFile', 'hi')
+            console.log('-----------------------------------------------------');
+            let roundtripStartTime = new Date();
+            console.log('File Size: ' + buffer.byteLength);
+            console.log('Roundtrip StartTime: ' + roundtripStartTime.getHours() + ':' + roundtripStartTime.getMinutes() + ':' + roundtripStartTime.getSeconds() + ':' + roundtripStartTime.getMilliseconds());
+            console.log('Emit StartTime: ' + roundtripStartTime.getHours() + ':' + roundtripStartTime.getMinutes() + ':' + roundtripStartTime.getSeconds() + ':' + roundtripStartTime.getMilliseconds());
+            socket.emit('imgFile', buffer);
+            let emitEndTime = new Date();
+            console.log('Emit EndTime: ' + emitEndTime.getHours() + ':' + emitEndTime.getMinutes() + ':' + emitEndTime.getSeconds() + ':' + emitEndTime.getMilliseconds());
+            sendCount += 1;
+        };
+        reader.readAsDataURL(data);
+    }
+
+    $(function () {
+        console.log('query function');
+        var input = document.getElementById('input');
+        input.addEventListener('change', handleFiles, false);
+        socket.on('sendagain', function (msg) {
+            if (sendCount < 10) {
+                let roundTripEndTime = new Date();
+                console.log('Roundtrip EndTime: ' + roundTripEndTime.getHours() + ':' + roundTripEndTime.getMinutes() + ':' + roundTripEndTime.getSeconds() + ':' + roundTripEndTime.getMilliseconds());
+                console.log('-----------------------------------------------------');
+                console.log('File Size: ' + buffer.byteLength);
+                let roundtripStartTime = new Date();
+                console.log('Roundtrip StartTime: ' + roundtripStartTime.getHours() + ':' + roundtripStartTime.getMinutes() + ':' + roundtripStartTime.getSeconds() + ':' + roundtripStartTime.getMilliseconds());
+                console.log('Emit StartTime: ' + roundtripStartTime.getHours() + ':' + roundtripStartTime.getMinutes() + ':' + roundtripStartTime.getSeconds() + ':' + roundtripStartTime.getMilliseconds());
+                socket.emit('imgFile', buffer);
+                let emitEndTime = new Date();
+                console.log('Emit EndTime: ' + emitEndTime.getHours() + ':' + emitEndTime.getMinutes() + ':' + emitEndTime.getSeconds() + ':' + emitEndTime.getMilliseconds());
+                sendCount += 1;
+            } else if (sendCount == 100) {
+                let roundTripEndTime = new Date();
+                console.log('Roundtrip EndTime: ' + roundTripEndTime.getHours() + ':' + roundTripEndTime.getMinutes() + ':' + roundTripEndTime.getSeconds() + ':' + roundTripEndTime.getMilliseconds());
+            }
+        });
+    });
+
+</script>
+<style>
+    canvas {
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+    }
+</style>
+
+</html>

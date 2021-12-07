@@ -1,0 +1,21 @@
+{
+  "name": "jsvids",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./server/proxy.js",
+  "scripts": {
+    "start": "cd server && node proxy.js",
+    "proxy": "cd server && nodemon proxy.js",
+    "server": "cd server && nodemon server.js",
+    "dev": "concurrently \"npm run proxy\" \"npm run server\""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^5.3.0",
+    "express": "^4.17.1",
+    "http-proxy": "^1.18.1",
+    "nodemon": "^2.0.7",
+    "socket.io": "^3.1.0"
+  }
+}
